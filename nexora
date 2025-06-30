@@ -37,13 +37,31 @@ function Nexora:CreateWindow(title, opts)
 	gui.IgnoreGuiInset = true
 	gui.ResetOnSpawn = false
 
-	local main = Instance.new("Frame", gui)
-	main.AnchorPoint = Vector2.new(0.5, 0.5)
-	main.Position = UDim2.new(0.5, 0, 0.5, 0)
-	main.Size = UDim2.new(0, 600, 0, 400)
-	main.BackgroundColor3 = theme.Background
+	local main = Instance.new("ImageLabel")
+	main.Name = "frame"
+	main.Parent = gui
+
+	main.Image = "rbxassetid://16255699706"
+	main.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	main.ImageTransparency = 0.8
+
+	main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+	main.BackgroundTransparency = 0.1
+	main.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	main.BorderSizePixel = 0
-	roundify(main, 12)
+
+	main.Visible = true
+	main.LayoutOrder = 0
+	main.ZIndex = 1
+	main.ClipsDescendants = false
+	main.Selectable = true
+
+	main.Size = UDim2.new(1, 0, 1, 0)
+	main.Position = UDim2.new(0.5, 0, 0.5, 0)
+	main.AnchorPoint = Vector2.new(0.5, 0.5)
+	main.AutomaticSize = Enum.AutomaticSize.None
+	main.SizeConstraint = Enum.SizeConstraint.RelativeXY
+	main.Rotation = 0
 
 	local tabsHolder = Instance.new("Frame", main)
 	tabsHolder.Size = UDim2.new(1, 0, 0, 50)
