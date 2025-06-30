@@ -1,198 +1,183 @@
--- NexoraUI.lua
-local Nexora = {}
-Nexora.__index = Nexora
+local nexoraLib = {}
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
+function nexoraLib:initNexoraLib()
+    local player = game:GetService("Players").LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
 
-local Themes = {
-	Dark = {
-		Background = Color3.fromRGB(30, 30, 30),
-		Text = Color3.fromRGB(255, 255, 255),
-		Accent = Color3.fromRGB(80, 120, 255),
-		Tab = Color3.fromRGB(40, 40, 45)
-	},
-	Light = {
-		Background = Color3.fromRGB(245, 245, 245),
-		Text = Color3.fromRGB(20, 20, 20),
-		Accent = Color3.fromRGB(120, 90, 255),
-		Tab = Color3.fromRGB(230, 230, 230)
-	}
-}
+    local Nexora = Instance.new("ScreenGui")
+    Nexora.Name = "Nexora"
+    Nexora.Parent = playerGui
 
-local function roundify(inst, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius or 8)
-	corner.Parent = inst
+    Nexora.ResetOnSpawn = false
+    Nexora.DisplayOrder = 1000
+    Nexora.IgnoreGuiInset = true
+    Nexora.Enabled = true
+
+    Nexora:SetAttribute("version", 1)
+    Nexora:SetAttribute("build", 100)
+
+    return Nexora
 end
 
-function Nexora:CreateWindow(title, opts)
-	opts = opts or {}
-	local theme = Themes[opts.Theme or "Dark"]
-	local layout = opts.Layout or "Thin"
+function nexoraLib:createWindow(parent)
+    local frame = Instance.new("ImageButton")
+    frame.Name = "Frame"
+    frame.Parent = parent
 
-	local player = Players.LocalPlayer
-	local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-	gui.Name = "NexoraUI"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
+    frame.Image = "rbxassetid://16255699706"
+    frame.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    frame.ImageTransparency = 0.8
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    frame.Visible = true
+    frame.ZIndex = 1
+    frame.ClipsDescendants = false
+    frame.Selectable = true
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.AutomaticSize = Enum.AutomaticSize.None
+    frame.SizeConstraint = Enum.SizeConstraint.RelativeXY
+    frame.Rotation = 0
 
-	local main = Instance.new("ImageLabel")
-	main.Name = "frame"
-	main.Parent = gui
-
-	main.Image = "rbxassetid://16255699706"
-	main.ImageColor3 = Color3.fromRGB(255, 255, 255)
-	main.ImageTransparency = 0.8
-
-	main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-	main.BackgroundTransparency = 0.1
-	main.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	main.BorderSizePixel = 0
-
-	main.Visible = true
-	main.LayoutOrder = 0
-	main.ZIndex = 1
-	main.ClipsDescendants = false
-	main.Selectable = true
-
-	main.Size = UDim2.new(1, 0, 1, 0)
-	main.Position = UDim2.new(0.5, 0, 0.5, 0)
-	main.AnchorPoint = Vector2.new(0.5, 0.5)
-	main.AutomaticSize = Enum.AutomaticSize.None
-	main.SizeConstraint = Enum.SizeConstraint.RelativeXY
-	main.Rotation = 0
-
-	local tabsHolder = Instance.new("Frame", main)
-	tabsHolder.Size = UDim2.new(1, 0, 0, 50)
-	tabsHolder.BackgroundColor3 = theme.Tab
-	roundify(tabsHolder, 12)
-
-	local tabLayout = Instance.new("UIListLayout", tabsHolder)
-	tabLayout.FillDirection = Enum.FillDirection.Horizontal
-	tabLayout.Padding = UDim.new(0, 4)
-
-	local content = Instance.new("Frame", main)
-	content.Position = UDim2.new(0, 0, 0, 50)
-	content.Size = UDim2.new(1, 0, 1, -50)
-	content.BackgroundTransparency = 1
-
-	local tabs = {}
-
-	local function switchTab(tabName)
-		for name, tab in pairs(tabs) do
-			tab.Page.Visible = (name == tabName)
-			TweenService:Create(tab.Button, TweenInfo.new(0.2), {
-				BackgroundColor3 = name == tabName and theme.Accent or theme.Tab
-			}):Play()
-		end
-	end
-
-	local win = {}
-
-	function win:AddTab(name)
-		local button = Instance.new("TextButton", tabsHolder)
-		button.Size = UDim2.new(0, 100, 1, 0)
-		button.Text = name
-		button.BackgroundColor3 = theme.Tab
-		button.TextColor3 = theme.Text
-		button.BorderSizePixel = 0
-		button.AutoButtonColor = false
-		roundify(button, 8)
-
-		local page = Instance.new("ScrollingFrame", content)
-		page.Size = UDim2.new(1, 0, 1, 0)
-		page.BackgroundTransparency = 1
-		page.Visible = false
-		page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		page.CanvasSize = UDim2.new(0, 0, 0, 0)
-		page.ScrollBarThickness = 4
-
-		local layout = Instance.new("UIListLayout", page)
-		layout.Padding = UDim.new(0, 10)
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-		tabs[name] = { Button = button, Page = page }
-
-		button.MouseButton1Click:Connect(function()
-			switchTab(name)
-		end)
-
-		if not next(tabs, next(tabs)) then
-			switchTab(name)
-		end
-
-		local tab = {}
-
-		function tab:AddInput(cfg)
-			local box = Instance.new("TextBox", page)
-			box.Size = UDim2.new(1, -20, 0, 40)
-			box.PlaceholderText = cfg.Placeholder or ""
-			box.Text = ""
-			box.BackgroundColor3 = theme.Background
-			box.TextColor3 = theme.Text
-			box.ClearTextOnFocus = false
-			box.TextSize = 16
-			box.BorderSizePixel = 0
-			box.PlaceholderColor3 = theme.Text:lerp(Color3.new(0, 0, 0), 0.5)
-			roundify(box, 6)
-			box.FocusLost:Connect(function()
-				if cfg.Callback then
-					cfg.Callback(box.Text)
-				end
-			end)
-		end
-
-		function tab:AddButton(cfg)
-			local btn = Instance.new("TextButton", page)
-			btn.Size = UDim2.new(1, -20, 0, 40)
-			btn.Text = cfg.Name or "Button"
-			btn.BackgroundColor3 = theme.Accent
-			btn.TextColor3 = Color3.new(1, 1, 1)
-			btn.BorderSizePixel = 0
-			roundify(btn, 6)
-			btn.MouseButton1Click:Connect(function()
-				if cfg.Callback then
-					cfg.Callback()
-				end
-			end)
-		end
-
-		function tab:AddCodeEditor(cfg)
-			local editor = Instance.new("TextBox", page)
-			editor.MultiLine = true
-			editor.Size = UDim2.new(1, -20, 0, 150)
-			editor.TextXAlignment = Enum.TextXAlignment.Left
-			editor.TextYAlignment = Enum.TextYAlignment.Top
-			editor.TextWrapped = true
-			editor.TextEditable = true
-			editor.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-			editor.TextColor3 = Color3.new(1, 1, 1)
-			editor.ClearTextOnFocus = false
-			editor.Font = Enum.Font.Code
-			editor.TextSize = 15
-			editor.Text = "-- Your code here"
-			editor.BorderSizePixel = 0
-			roundify(editor, 6)
-			editor.FocusLost:Connect(function()
-				if cfg.Callback then
-					cfg.Callback(editor.Text)
-				end
-			end)
-		end
-
-		return tab
-	end
-
-	function Nexora:SetTheme(themeNameOrTable)
-		if typeof(themeNameOrTable) == "string" and Themes[themeNameOrTable] then
-			theme = Themes[themeNameOrTable]
-		elseif typeof(themeNameOrTable) == "table" then
-			theme = themeNameOrTable
-		end
-	end
-
-	return win
+    return frame
 end
 
-return Nexora
+function nexoraLib:setupWindowControls(frame)
+    local window_controls = Instance.new("CanvasGroup")
+    window_controls.Name = "window_controls"
+    window_controls.Parent = frame
+
+    window_controls.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    window_controls.BackgroundTransparency = 1
+    window_controls.BorderSizePixel = 0
+    window_controls.Visible = true
+    window_controls.ZIndex = 2
+    window_controls.ClipsDescendants = true
+    window_controls.Selectable = false
+    window_controls.Size = UDim2.new(1, 0, 1, 0)
+    window_controls.Position = UDim2.new(0.5, 0, 0.5, 0)
+    window_controls.AnchorPoint = Vector2.new(0.5, 0.5)
+    window_controls.AutomaticSize = Enum.AutomaticSize.None
+    window_controls.SizeConstraint = Enum.SizeConstraint.RelativeXY
+    window_controls.Rotation = 0.00001
+    window_controls:SetAttribute("collapsed", false)
+
+    return window_controls
+end
+
+function nexoraLib:AddTopButton(parent)
+    -- stub for top button logic
+end
+
+function nexoraLib:AddMiddleButton(parent)
+    -- stub for middle button logic
+end
+
+function nexoraLib:AddBottomButton(parent)
+    -- stub for bottom button logic
+end
+
+function nexoraLib:notif(parent, text)
+    local notification = Instance.new("ImageButton")
+    notification.Name = "notification"
+    notification.Parent = parent
+
+    notification.Image = "rbxassetid://16294030997"
+    notification.ImageColor3 = Color3.fromRGB(80, 80, 80)
+    notification.ImageTransparency = 0
+    notification.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+    notification.BackgroundTransparency = 0.05
+    notification.BorderSizePixel = 0
+    notification.Visible = false
+    notification.ZIndex = 10
+    notification.ClipsDescendants = true
+    notification.Selectable = false
+    notification.Size = UDim2.new(0, 0, 0, 40)
+    notification.Position = UDim2.new(0.5, 0, 0, 30)
+    notification.AnchorPoint = Vector2.new(0.5, 0)
+    notification.AutomaticSize = Enum.AutomaticSize.X
+    notification.SizeConstraint = Enum.SizeConstraint.RelativeXY
+    notification:SetAttribute("closing", false)
+    notification:SetAttribute("duration", 0)
+
+    local description = Instance.new("TextLabel")
+    description.Name = "description"
+    description.Parent = notification
+    description.BackgroundTransparency = 1
+    description.ZIndex = 10
+    description.Size = UDim2.new(0, 0, 1, 0)
+    description.Position = UDim2.new(0, 26, 0, 0)
+    description.AutomaticSize = Enum.AutomaticSize.X
+    description.Text = text or "Notification"
+    description.Font = Enum.Font.Gotham
+    description.TextColor3 = Color3.fromRGB(255, 255, 255)
+    description.TextSize = 15
+    description.TextTransparency = 0.2
+    description.TextXAlignment = Enum.TextXAlignment.Center
+    description.TextYAlignment = Enum.TextYAlignment.Center
+
+    local close = Instance.new("ImageLabel")
+    close.Name = "close"
+    close.Parent = notification
+    close.Image = "rbxassetid://11293981586"
+    close.ImageTransparency = 1
+    close.BackgroundTransparency = 1
+    close.Size = UDim2.new(0, 16, 0, 16)
+    close.Position = UDim2.new(0, 8, 0.5, 0)
+    close.AnchorPoint = Vector2.new(0.5, 0.5)
+
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "icon"
+    icon.Parent = notification
+    icon.Image = "rbxassetid://11295275950"
+    icon.BackgroundTransparency = 1
+    icon.Size = UDim2.new(0, 16, 0, 16)
+    icon.Position = UDim2.new(0, 8, 0.5, 0)
+    icon.AnchorPoint = Vector2.new(0.5, 0.5)
+
+    local timeline = Instance.new("ImageLabel")
+    timeline.Name = "timeline"
+    timeline.Parent = notification
+    timeline.Image = "rbxassetid://16294678871"
+    timeline.ImageTransparency = 0.8
+    timeline.Size = UDim2.new(0.1, 50, 0, 2)
+    timeline.Position = UDim2.new(0.5, 0, 2, 0)
+    timeline.AnchorPoint = Vector2.new(0.5, 1)
+
+    local bar = Instance.new("ImageLabel")
+    bar.Name = "bar"
+    bar.Parent = timeline
+    bar.Image = "rbxassetid://16294678871"
+    bar.ImageTransparency = 0.2
+    bar.Size = UDim2.new(0, 0, 1, 0)
+    bar.Position = UDim2.new(0, 0, 0.5, 0)
+    bar.AnchorPoint = Vector2.new(0, 0.5)
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Name = "stroke"
+    stroke.Parent = notification
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Name = "gradient"
+    gradient.Parent = stroke
+    gradient.Rotation = 80
+
+    local corner = Instance.new("UICorner")
+    corner.Name = "corner"
+    corner.Parent = notification
+
+    local scale1 = Instance.new("UIScale", close)
+    scale1.Name = "scale"
+
+    local scale2 = Instance.new("UIScale", icon)
+    scale2.Name = "scale"
+
+    local padding = Instance.new("UIPadding", notification)
+    padding.Name = "padding"
+
+    return notification
+end
+
+return nexoraLib
