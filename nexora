@@ -25,16 +25,21 @@ function Nexora:Notify(options)
 
 	local gui = createNotifyGui()
 
-	local notif = Instance.new("ImageButton", gui)
-	notif.Name = "Notification"
-	notif.Size = UDim2.new(0, 300, 0, 40)
-	notif.Position = UDim2.new(0.5, -150, 0, -50)
-	notif.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-	notif.Image = "rbxassetid://16294030997"
-	notif.ImageColor3 = Color3.fromRGB(80, 80, 80)
-	notif.AnchorPoint = Vector2.new(0, 0)
-	notif.ClipsDescendants = true
-	notif.BorderSizePixel = 0
+	local notification = Instance.new("ImageButton", gui)
+notification.Name = "notification"
+notification.Parent = Nexora
+notification.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+notification.BackgroundTransparency = 0.05000000074505806
+notification.BorderColor3 = Color3.fromRGB(0, 0, 0)
+notification.BorderSizePixel = 0
+notification.Size = UDim2.new(0, 0, 0, 40)
+notification.Position = UDim2.new(0.5, 0, 0, 30)
+notification.AnchorPoint = Vector2.new(0, 0)
+notification.Visible = false
+notification.Name = "notification"
+notification.Image = "rbxassetid://16294030997"
+notification.ImageColor3 = Color3.fromRGB(80, 80, 80)
+notification.ImageTransparency = 0
 
 	createCorner(notif, 8)
 
