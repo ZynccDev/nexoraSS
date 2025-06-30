@@ -20,7 +20,7 @@ function nexoraLib:initNexoraLib()
 end
 
 function nexoraLib:createWindow(parent)
-    local frame = Instance.new("ImageButton")
+    local frame = Instance.new("ImageLabel")
     frame.Name = "Frame"
     frame.Parent = parent
 
