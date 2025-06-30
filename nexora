@@ -25,21 +25,17 @@ function Nexora:Notify(options)
 
 	local gui = createNotifyGui()
 
-	local notif = Instance.new("ImageButton", gui)
-notif.Name = "notification"
-notif.Parent = Nexora
-notif.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-notif.BackgroundTransparency = 0.05000000074505806
-notif.BorderColor3 = Color3.fromRGB(0, 0, 0)
-notif.BorderSizePixel = 0
-notif.Size = UDim2.new(0, 0, 0, 40)
-notif.Position = UDim2.new(0.5, 0, 0, 30)
-notif.AnchorPoint = Vector2.new(0, 0)
-notif.Visible = false
-notif.Name = "notification"
-notif.Image = "rbxassetid://16294030997"
-notif.ImageColor3 = Color3.fromRGB(80, 80, 80)
-notif.ImageTransparency = 0
+	local notif = Instance.new("ImageButton")
+	notif.Name = "notification"
+	notif.Parent = gui
+	notif.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+	notif.BackgroundTransparency = 0.05
+	notif.BorderSizePixel = 0
+	notif.Size = UDim2.new(0, 0, 0, 40)
+	notif.Position = UDim2.new(0.5, 0, 0, 30)
+	notif.AnchorPoint = Vector2.new(0.5, 0)
+	notif.Image = "rbxassetid://16294030997"
+	notif.ImageColor3 = Color3.fromRGB(80, 80, 80)
 
 	createCorner(notif, 8)
 
@@ -66,15 +62,18 @@ notif.ImageTransparency = 0
 	bar.Position = UDim2.new(0, 0, 1, -2)
 	bar.BorderSizePixel = 0
 
-	local inTween = TweenService:Create(notif, TweenInfo.new(0.25), {
-		Position = UDim2.new(0.5, -150, 0, 30)
-	})
+	-- Tween In
+	local inTween1 = TweenService:Create(notif, TweenInfo.new(0.25), {Size = UDim2.new(0, 300, 0, 40)})
+	local inTween2 = TweenService:Create(notif, TweenInfo.new(0.25), {Position = UDim2.new(0.5, -150, 0, 30)})
 	local barTween = TweenService:Create(bar, TweenInfo.new(duration), {
 		Size = UDim2.new(1, 0, 0, 2)
 	})
-	inTween:Play()
+
+	inTween1:Play()
+	inTween2:Play()
 	barTween:Play()
 
+	-- Auto-destroy after duration
 	task.delay(duration, function()
 		local outTween = TweenService:Create(notif, TweenInfo.new(0.25), {
 			Position = UDim2.new(0.5, -150, 0, -50)
@@ -93,18 +92,15 @@ function Nexora:Announce(options)
 
 	local gui = createNotifyGui()
 
-	local announcement = Instance.new("Frame", gui)
+	local announcement = Instance.new("Frame")
 	announcement.Name = "announcement"
-	announcement.Parent = Nexora
+	announcement.Parent = gui
 	announcement.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	announcement.BackgroundTransparency = 0.20000000298023224
-	announcement.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	announcement.BackgroundTransparency = 0.2
 	announcement.BorderSizePixel = 0
-	announcement.Size = UDim2.new(2, 0, 1, 0)
+	announcement.Size = UDim2.new(fullscreen and 2 or 1, 0, 1, 0)
 	announcement.Position = UDim2.new(0.5, 0, 0.5, 0)
-	announcement.AnchorPoint = Vector2.new(0, 0)
-	announcement.Visible = false
-	announcement.Name = "announcement"
+	announcement.AnchorPoint = Vector2.new(0.5, 0.5)
 
 	local container = Instance.new("ImageLabel", announcement)
 	container.Size = UDim2.new(0.5, 0, 1, 0)
@@ -112,7 +108,7 @@ function Nexora:Announce(options)
 	container.AnchorPoint = Vector2.new(0.5, 0.5)
 	container.BackgroundTransparency = 1
 	container.Image = "rbxassetid://13685684156"
-	container.ImageTransparency = 0
+	container.ImageTransparency = 1
 
 	local label = Instance.new("TextLabel", container)
 	label.Size = UDim2.new(1, 0, 0, 50)
@@ -148,7 +144,6 @@ function Nexora:Editor(options)
 	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-
 	createCorner(frame, 8)
 
 	local textbox = Instance.new("TextBox", frame)
@@ -173,13 +168,10 @@ function Nexora:Editor(options)
 	button.Font = Enum.Font.Gotham
 	button.TextColor3 = Color3.new(1, 1, 1)
 	button.TextSize = 14
-
 	createCorner(button, 4)
 
 	button.MouseButton1Click:Connect(function()
-		if onSave then
-			onSave(textbox.Text)
-		end
+		if onSave then onSave(textbox.Text) end
 		gui:Destroy()
 	end)
 
