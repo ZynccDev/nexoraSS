@@ -18,7 +18,7 @@ function nexoraLib:initNexoraLib()
     Nexora:SetAttribute("version", 1)
     Nexora:SetAttribute("build", 100)
 
-    return Nexora -- return it so you can use it as parent later
+    return Nexora
 end
 
 function nexoraLib:createWindow(parent)
@@ -50,7 +50,32 @@ function nexoraLib:createWindow(parent)
     frame.SizeConstraint = Enum.SizeConstraint.RelativeXY
     frame.Rotation = 0
 
-    return frame
+    -- Control container
+    local window_controls = Instance.new("CanvasGroup")
+    window_controls.Name = "window_controls"
+    window_controls.Parent = frame
+
+    window_controls.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    window_controls.BackgroundTransparency = 1
+    window_controls.BorderSizePixel = 0
+
+    window_controls.Visible = true
+    window_controls.LayoutOrder = 0
+    window_controls.ZIndex = 2
+    window_controls.ClipsDescendants = true
+    window_controls.Selectable = false
+
+    window_controls.Size = UDim2.new(1, 0, 1, 0)
+    window_controls.Position = UDim2.new(0.5, 0, 0.5, 0)
+    window_controls.AnchorPoint = Vector2.new(0.5, 0.5)
+    window_controls.AutomaticSize = Enum.AutomaticSize.None
+    window_controls.SizeConstraint = Enum.SizeConstraint.RelativeXY
+    window_controls.Rotation = 0
+
+    window_controls:SetAttribute("collapsed", false)
+
+    -- Return both
+    return frame, window_controls
 end
 
 return nexoraLib
