@@ -1,117 +1,178 @@
-local EXELib = {}
-
-local TweenService = game:GetService("TweenService")
+local Nexora = {}
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 
-function EXELib:CreateWindow(title)
-    local player = Players.LocalPlayer
-    local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-    gui.Name = "EXE_UI"
-    gui.ResetOnSpawn = false
-
-    local main = Instance.new("Frame", gui)
-    main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    main.Size = UDim2.new(0, 600, 0, 400)
-    main.Position = UDim2.new(0.5, -300, 0.5, -200)
-    main.AnchorPoint = Vector2.new(0.5, 0.5)
-    main.BorderSizePixel = 0
-    main.Name = "MainFrame"
-
-    local uicorner = Instance.new("UICorner", main)
-    uicorner.CornerRadius = UDim.new(0, 8)
-
-    local titleLabel = Instance.new("TextLabel", main)
-    titleLabel.Text = title or "EXE v5 UI"
-    titleLabel.Size = UDim2.new(1, 0, 0, 40)
-    titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextScaled = true
-    titleLabel.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", titleLabel).CornerRadius = UDim.new(0, 8)
-
-    -- Drag handler
-    local dragging, dragInput, dragStart, startPos
-
-    titleLabel.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = main.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    titleLabel.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-
-    local tabHolder = Instance.new("Frame", main)
-    tabHolder.Name = "TabHolder"
-    tabHolder.Position = UDim2.new(0, 0, 0, 40)
-    tabHolder.Size = UDim2.new(0, 150, 1, -40)
-    tabHolder.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Instance.new("UICorner", tabHolder).CornerRadius = UDim.new(0, 6)
-
-    local container = Instance.new("Frame", main)
-    container.Name = "Content"
-    container.Position = UDim2.new(0, 150, 0, 40)
-    container.Size = UDim2.new(1, -150, 1, -40)
-    container.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 6)
-
-    local tabList = {}
-
-    function tabList:AddTab(name)
-        local button = Instance.new("TextButton", tabHolder)
-        button.Text = name
-        button.Size = UDim2.new(1, 0, 0, 40)
-        button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        button.TextColor3 = Color3.new(1, 1, 1)
-        button.Font = Enum.Font.Gotham
-        button.TextScaled = true
-        Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
-
-        local page = Instance.new("Frame", container)
-        page.Size = UDim2.new(1, 0, 1, 0)
-        page.BackgroundTransparency = 1
-        page.Visible = false
-
-        button.MouseButton1Click:Connect(function()
-            for _, child in pairs(container:GetChildren()) do
-                if child:IsA("Frame") then child.Visible = false end
-            end
-            page.Visible = true
-        end)
-
-        return {
-            Page = page,
-            AddLabel = function(_, txt)
-                local label = Instance.new("TextLabel", page)
-                label.Text = txt
-                label.Size = UDim2.new(1, 0, 0, 30)
-                label.TextColor3 = Color3.new(1, 1, 1)
-                label.BackgroundTransparency = 1
-                label.Font = Enum.Font.Gotham
-                label.TextScaled = true
-                return label
-            end
-        }
-    end
-
-    return tabList
+local function createCorner(inst, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 6)
+	corner.Parent = inst
 end
 
-return EXELib
+local function createNotifyGui()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "NexoraNotify"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	return gui
+end
+
+function Nexora:Notify(options)
+	local msg = options.Text or "Notification"
+	local duration = options.Duration or 3
+	local iconId = options.Icon or "rbxassetid://11295275950"
+
+	local gui = createNotifyGui()
+
+	local notif = Instance.new("ImageButton", gui)
+	notif.Name = "Notification"
+	notif.Size = UDim2.new(0, 300, 0, 40)
+	notif.Position = UDim2.new(0.5, -150, 0, -50)
+	notif.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+	notif.Image = "rbxassetid://16294030997"
+	notif.ImageColor3 = Color3.fromRGB(80, 80, 80)
+	notif.AnchorPoint = Vector2.new(0, 0)
+	notif.ClipsDescendants = true
+	notif.BorderSizePixel = 0
+
+	createCorner(notif, 8)
+
+	local icon = Instance.new("ImageLabel", notif)
+	icon.Name = "icon"
+	icon.Size = UDim2.new(0, 16, 0, 16)
+	icon.Position = UDim2.new(0, 8, 0.5, -8)
+	icon.BackgroundTransparency = 1
+	icon.Image = iconId
+
+	local desc = Instance.new("TextLabel", notif)
+	desc.Text = msg
+	desc.Font = Enum.Font.Gotham
+	desc.TextSize = 14
+	desc.TextColor3 = Color3.new(1, 1, 1)
+	desc.BackgroundTransparency = 1
+	desc.Size = UDim2.new(1, -40, 1, 0)
+	desc.Position = UDim2.new(0, 32, 0, 0)
+	desc.TextXAlignment = Enum.TextXAlignment.Left
+
+	local bar = Instance.new("Frame", notif)
+	bar.BackgroundColor3 = Color3.new(1, 1, 1)
+	bar.Size = UDim2.new(0, 0, 0, 2)
+	bar.Position = UDim2.new(0, 0, 1, -2)
+	bar.BorderSizePixel = 0
+
+	local inTween = TweenService:Create(notif, TweenInfo.new(0.25), {
+		Position = UDim2.new(0.5, -150, 0, 30)
+	})
+	local barTween = TweenService:Create(bar, TweenInfo.new(duration), {
+		Size = UDim2.new(1, 0, 0, 2)
+	})
+	inTween:Play()
+	barTween:Play()
+
+	task.delay(duration, function()
+		local outTween = TweenService:Create(notif, TweenInfo.new(0.25), {
+			Position = UDim2.new(0.5, -150, 0, -50)
+		})
+		outTween:Play()
+		task.wait(0.3)
+		gui:Destroy()
+	end)
+end
+
+function Nexora:Announce(options)
+	local text = options.Text or "Announcement"
+	local duration = options.Duration or 5
+	local fullscreen = options.Fullscreen or false
+	local iconId = options.Icon or "rbxassetid://11295275950"
+
+	local gui = createNotifyGui()
+
+	local announcement = Instance.new("Frame", gui)
+	announcement.BackgroundColor3 = Color3.new(0, 0, 0)
+	announcement.BackgroundTransparency = 0.2
+	announcement.Size = UDim2.new(fullscreen and 2 or 1, 0, 1, 0)
+	announcement.Position = UDim2.new(0.5, 0, 0.5, 0)
+	announcement.AnchorPoint = Vector2.new(0.5, 0.5)
+
+	local container = Instance.new("ImageLabel", announcement)
+	container.Size = UDim2.new(0.5, 0, 1, 0)
+	container.Position = UDim2.new(0.5, 0, 0.5, 0)
+	container.AnchorPoint = Vector2.new(0.5, 0.5)
+	container.BackgroundTransparency = 1
+	container.Image = "rbxassetid://13685684156"
+	container.ImageTransparency = 0
+
+	local label = Instance.new("TextLabel", container)
+	label.Size = UDim2.new(1, 0, 0, 50)
+	label.Position = UDim2.new(0.5, 0, 0.5, -25)
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Text = text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 28
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+
+	TweenService:Create(container, TweenInfo.new(0.5), {
+		ImageTransparency = 0
+	}):Play()
+
+	task.delay(duration, function()
+		TweenService:Create(container, TweenInfo.new(0.5), {
+			ImageTransparency = 1
+		}):Play()
+		task.wait(0.5)
+		gui:Destroy()
+	end)
+end
+
+function Nexora:Editor(options)
+	local code = options.Code or "-- Code here"
+	local onSave = options.OnSave
+
+	local gui = createNotifyGui()
+
+	local frame = Instance.new("Frame", gui)
+	frame.Size = UDim2.new(0.6, 0, 0.6, 0)
+	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+	createCorner(frame, 8)
+
+	local textbox = Instance.new("TextBox", frame)
+	textbox.MultiLine = true
+	textbox.TextWrapped = false
+	textbox.ClearTextOnFocus = false
+	textbox.Font = Enum.Font.Code
+	textbox.TextSize = 14
+	textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textbox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	textbox.Size = UDim2.new(1, -20, 1, -60)
+	textbox.Position = UDim2.new(0, 10, 0, 10)
+	textbox.Text = code
+	textbox.TextXAlignment = Enum.TextXAlignment.Left
+	textbox.TextYAlignment = Enum.TextYAlignment.Top
+
+	local button = Instance.new("TextButton", frame)
+	button.Size = UDim2.new(0, 100, 0, 30)
+	button.Position = UDim2.new(1, -110, 1, -40)
+	button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	button.Text = "Save"
+	button.Font = Enum.Font.Gotham
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.TextSize = 14
+
+	createCorner(button, 4)
+
+	button.MouseButton1Click:Connect(function()
+		if onSave then
+			onSave(textbox.Text)
+		end
+		gui:Destroy()
+	end)
+
+	return textbox
+end
+
+return Nexora
