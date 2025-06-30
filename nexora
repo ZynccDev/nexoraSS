@@ -1,181 +1,538 @@
-local Nexora = {}
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
+–[[
+Nexora UI Library
+A modern, lightweight UI library for Roblox/Luau
 
-local function createCorner(inst, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius or 6)
-	corner.Parent = inst
+```
+Features:
+- Notification system with animations
+- Theme support
+- Responsive scaling
+- Easy-to-use API
+```
+
+]]–
+
+local NexoraUI = {}
+NexoraUI.__index = NexoraUI
+
+– Services
+local Players = game:GetService(“Players”)
+local TweenService = game:GetService(“TweenService”)
+local RunService = game:GetService(“RunService”)
+local UserInputService = game:GetService(“UserInputService”)
+
+– Constants
+local NOTIFICATION_DURATION = 5
+local ANIMATION_SPEED = 0.5
+local SLIDE_SPEED = 1.5
+
+– Default theme
+local DEFAULT_THEME = {
+notification = {
+background = Color3.fromRGB(79, 79, 79),
+backgroundTransparency = 0.05,
+textColor = Color3.fromRGB(255, 255, 255),
+textTransparency = 0.2,
+iconColor = Color3.fromRGB(255, 255, 255),
+timelineColor = Color3.fromRGB(255, 255, 255),
+timelineTransparency = 0.8,
+barTransparency = 0.2
+},
+icons = {
+info = “rbxassetid://11295275950”,
+warning = “rbxassetid://11295275950”,
+error = “rbxassetid://11295275950”,
+success = “rbxassetid://11295275950”,
+close = “rbxassetid://11293981586”
+},
+animations = {
+notification = TweenInfo.new(SLIDE_SPEED, Enum.EasingStyle.Exponential),
+hover = TweenInfo.new(ANIMATION_SPEED, Enum.EasingStyle.Exponential)
+}
+}
+
+– Constructor
+function NexoraUI.new(options)
+local self = setmetatable({}, NexoraUI)
+
+```
+options = options or {}
+self.theme = options.theme or DEFAULT_THEME
+self.parent = options.parent or Players.LocalPlayer:WaitForChild("PlayerGui")
+self.scale = options.scale or 1
+
+self:_initialize()
+
+return self
+```
+
 end
 
-local function createNotifyGui()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "NexoraNotify"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-	return gui
+– Initialize the UI system
+function NexoraUI:_initialize()
+– Create main ScreenGui
+self.screenGui = Instance.new(“ScreenGui”)
+self.screenGui.Name = “NexoraUI”
+self.screenGui.Parent = self.parent
+self.screenGui.ResetOnSpawn = false
+self.screenGui.IgnoreGuiInset = true
+
+```
+-- Create UI scale
+local uiScale = Instance.new("UIScale")
+uiScale.Name = "UIScale"
+uiScale.Scale = self.scale
+uiScale.Parent = self.screenGui
+
+-- Create storage folder
+self.storage = Instance.new("Folder")
+self.storage.Name = "Storage"
+self.storage.Parent = self.screenGui
+
+-- Create notification container
+self.notificationContainer = Instance.new("Frame")
+self.notificationContainer.Name = "NotificationContainer"
+self.notificationContainer.Parent = self.screenGui
+self.notificationContainer.BackgroundTransparency = 1
+self.notificationContainer.Size = UDim2.new(1, 0, 1, 0)
+self.notificationContainer.Position = UDim2.new(0, 0, 0, 0)
+
+-- Initialize notification queue
+self.notificationQueue = {}
+self.activeNotifications = {}
+
+self:_setupResponsiveScaling()
+```
+
 end
 
-function Nexora:Notify(options)
-	local msg = options.Text or "Notification"
-	local duration = options.Duration or 3
-	local iconId = options.Icon or "rbxassetid://11295275950"
+– Setup responsive scaling
+function NexoraUI:_setupResponsiveScaling()
+local function updateScale()
+local viewportSize = workspace.CurrentCamera.ViewportSize
+local baseWidth = 1920
+local scaleFactor = math.min(viewportSize.X / baseWidth, 1) * self.scale
 
-	local gui = createNotifyGui()
-
-	local notif = Instance.new("ImageButton")
-	notif.Name = "notification"
-	notif.Parent = gui
-	notif.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-	notif.BackgroundTransparency = 0.05
-	notif.BorderSizePixel = 0
-	notif.Size = UDim2.new(0, 0, 0, 40)
-	notif.Position = UDim2.new(0.5, 0, 0, 30)
-	notif.AnchorPoint = Vector2.new(0.5, 0)
-	notif.Image = "rbxassetid://16294030997"
-	notif.ImageColor3 = Color3.fromRGB(80, 80, 80)
-
-	createCorner(notif, 8)
-
-	local icon = Instance.new("ImageLabel", notif)
-	icon.Name = "icon"
-	icon.Size = UDim2.new(0, 16, 0, 16)
-	icon.Position = UDim2.new(0, 8, 0.5, -8)
-	icon.BackgroundTransparency = 1
-	icon.Image = iconId
-
-	local desc = Instance.new("TextLabel", notif)
-	desc.Text = msg
-	desc.Font = Enum.Font.Gotham
-	desc.TextSize = 14
-	desc.TextColor3 = Color3.new(1, 1, 1)
-	desc.BackgroundTransparency = 1
-	desc.Size = UDim2.new(1, -40, 1, 0)
-	desc.Position = UDim2.new(0, 32, 0, 0)
-	desc.TextXAlignment = Enum.TextXAlignment.Left
-
-	local bar = Instance.new("Frame", notif)
-	bar.BackgroundColor3 = Color3.new(1, 1, 1)
-	bar.Size = UDim2.new(0, 0, 0, 2)
-	bar.Position = UDim2.new(0, 0, 1, -2)
-	bar.BorderSizePixel = 0
-
-	-- Tween In
-	local inTween1 = TweenService:Create(notif, TweenInfo.new(0.25), {Size = UDim2.new(0, 300, 0, 40)})
-	local inTween2 = TweenService:Create(notif, TweenInfo.new(0.25), {Position = UDim2.new(0.5, -150, 0, 30)})
-	local barTween = TweenService:Create(bar, TweenInfo.new(duration), {
-		Size = UDim2.new(1, 0, 0, 2)
-	})
-
-	inTween1:Play()
-	inTween2:Play()
-	barTween:Play()
-
-	-- Auto-destroy after duration
-	task.delay(duration, function()
-		local outTween = TweenService:Create(notif, TweenInfo.new(0.25), {
-			Position = UDim2.new(0.5, -150, 0, -50)
-		})
-		outTween:Play()
-		task.wait(0.3)
-		gui:Destroy()
-	end)
+```
+    local uiScale = self.screenGui:FindFirstChild("UIScale")
+    if uiScale then
+        uiScale.Scale = scaleFactor
+    end
 end
 
-function Nexora:Announce(options)
-	local text = options.Text or "Announcement"
-	local duration = options.Duration or 5
-	local fullscreen = options.Fullscreen or false
-	local iconId = options.Icon or "rbxassetid://11295275950"
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+updateScale()
+```
 
-	local gui = createNotifyGui()
-
-	local announcement = Instance.new("Frame")
-	announcement.Name = "announcement"
-	announcement.Parent = gui
-	announcement.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	announcement.BackgroundTransparency = 0.2
-	announcement.BorderSizePixel = 0
-	announcement.Size = UDim2.new(fullscreen and 2 or 1, 0, 1, 0)
-	announcement.Position = UDim2.new(0.5, 0, 0.5, 0)
-	announcement.AnchorPoint = Vector2.new(0.5, 0.5)
-
-	local container = Instance.new("ImageLabel", announcement)
-	container.Size = UDim2.new(0.5, 0, 1, 0)
-	container.Position = UDim2.new(0.5, 0, 0.5, 0)
-	container.AnchorPoint = Vector2.new(0.5, 0.5)
-	container.BackgroundTransparency = 1
-	container.Image = "rbxassetid://13685684156"
-	container.ImageTransparency = 1
-
-	local label = Instance.new("TextLabel", container)
-	label.Size = UDim2.new(1, 0, 0, 50)
-	label.Position = UDim2.new(0.5, 0, 0.5, -25)
-	label.AnchorPoint = Vector2.new(0.5, 0.5)
-	label.Text = text
-	label.Font = Enum.Font.GothamBold
-	label.TextSize = 28
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.BackgroundTransparency = 1
-
-	TweenService:Create(container, TweenInfo.new(0.5), {
-		ImageTransparency = 0
-	}):Play()
-
-	task.delay(duration, function()
-		TweenService:Create(container, TweenInfo.new(0.5), {
-			ImageTransparency = 1
-		}):Play()
-		task.wait(0.5)
-		gui:Destroy()
-	end)
 end
 
-function Nexora:Editor(options)
-	local code = options.Code or "-- Code here"
-	local onSave = options.OnSave
+– Create notification template
+function NexoraUI:_createNotificationTemplate()
+local notification = Instance.new(“ImageButton”)
+notification.Name = “Notification”
+notification.BackgroundColor3 = self.theme.notification.background
+notification.BackgroundTransparency = self.theme.notification.backgroundTransparency
+notification.BorderSizePixel = 0
+notification.Size = UDim2.new(0, 0, 0, 40)
+notification.Position = UDim2.new(0.5, 0, 0, 30)
+notification.AnchorPoint = Vector2.new(0.5, 0)
+notification.Visible = false
+notification.Image = “rbxassetid://16294030997”
+notification.ImageColor3 = Color3.fromRGB(80, 80, 80)
+notification.ImageTransparency = 0
 
-	local gui = createNotifyGui()
+```
+-- Corner rounding
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = notification
 
-	local frame = Instance.new("Frame", gui)
-	frame.Size = UDim2.new(0.6, 0, 0.6, 0)
-	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	createCorner(frame, 8)
+-- Stroke
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(100, 100, 100)
+stroke.Thickness = 1
+stroke.Transparency = 0.5
+stroke.Parent = notification
 
-	local textbox = Instance.new("TextBox", frame)
-	textbox.MultiLine = true
-	textbox.TextWrapped = false
-	textbox.ClearTextOnFocus = false
-	textbox.Font = Enum.Font.Code
-	textbox.TextSize = 14
-	textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-	textbox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	textbox.Size = UDim2.new(1, -20, 1, -60)
-	textbox.Position = UDim2.new(0, 10, 0, 10)
-	textbox.Text = code
-	textbox.TextXAlignment = Enum.TextXAlignment.Left
-	textbox.TextYAlignment = Enum.TextYAlignment.Top
+-- Gradient for stroke
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 150, 150)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 50, 50))
+}
+gradient.Parent = stroke
 
-	local button = Instance.new("TextButton", frame)
-	button.Size = UDim2.new(0, 100, 0, 30)
-	button.Position = UDim2.new(1, -110, 1, -40)
-	button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-	button.Text = "Save"
-	button.Font = Enum.Font.Gotham
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.TextSize = 14
-	createCorner(button, 4)
+-- Text label
+local description = Instance.new("TextLabel")
+description.Name = "Description"
+description.Parent = notification
+description.Text = "Notification"
+description.Font = Enum.Font.GothamMedium
+description.TextSize = 15
+description.TextColor3 = self.theme.notification.textColor
+description.TextTransparency = self.theme.notification.textTransparency
+description.BackgroundTransparency = 1
+description.Size = UDim2.new(1, -52, 1, 0)
+description.Position = UDim2.new(0, 26, 0, 0)
+description.TextXAlignment = Enum.TextXAlignment.Left
+description.TextYAlignment = Enum.TextYAlignment.Center
+description.TextWrapped = true
 
-	button.MouseButton1Click:Connect(function()
-		if onSave then onSave(textbox.Text) end
-		gui:Destroy()
-	end)
+-- Icon
+local icon = Instance.new("ImageLabel")
+icon.Name = "Icon"
+icon.Parent = notification
+icon.BackgroundTransparency = 1
+icon.Size = UDim2.new(0, 16, 0, 16)
+icon.Position = UDim2.new(0, 8, 0.5, 0)
+icon.AnchorPoint = Vector2.new(0, 0.5)
+icon.Image = self.theme.icons.info
+icon.ImageColor3 = self.theme.notification.iconColor
 
-	return textbox
+local iconScale = Instance.new("UIScale")
+iconScale.Scale = 1
+iconScale.Parent = icon
+
+-- Close button
+local close = Instance.new("ImageLabel")
+close.Name = "Close"
+close.Parent = notification
+close.BackgroundTransparency = 1
+close.Size = UDim2.new(0, 16, 0, 16)
+close.Position = UDim2.new(1, -24, 0.5, 0)
+close.AnchorPoint = Vector2.new(0, 0.5)
+close.Image = self.theme.icons.close
+close.ImageColor3 = self.theme.notification.iconColor
+close.ImageTransparency = 1
+
+local closeScale = Instance.new("UIScale")
+closeScale.Scale = 0
+closeScale.Parent = close
+
+-- Timeline
+local timeline = Instance.new("Frame")
+timeline.Name = "Timeline"
+timeline.Parent = notification
+timeline.BackgroundColor3 = self.theme.notification.timelineColor
+timeline.BackgroundTransparency = self.theme.notification.timelineTransparency
+timeline.BorderSizePixel = 0
+timeline.Size = UDim2.new(1, 0, 0, 2)
+timeline.Position = UDim2.new(0, 0, 1, 0)
+timeline.AnchorPoint = Vector2.new(0, 0)
+
+local timelineCorner = Instance.new("UICorner")
+timelineCorner.CornerRadius = UDim.new(0, 1)
+timelineCorner.Parent = timeline
+
+-- Progress bar
+local bar = Instance.new("Frame")
+bar.Name = "Bar"
+bar.Parent = timeline
+bar.BackgroundColor3 = self.theme.notification.timelineColor
+bar.BackgroundTransparency = self.theme.notification.barTransparency
+bar.BorderSizePixel = 0
+bar.Size = UDim2.new(0, 0, 1, 0)
+bar.Position = UDim2.new(0, 0, 0, 0)
+
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 1)
+barCorner.Parent = bar
+
+-- Padding
+local padding = Instance.new("UIPadding")
+padding.PaddingLeft = UDim.new(0, 8)
+padding.PaddingRight = UDim.new(0, 8)
+padding.PaddingTop = UDim.new(0, 4)
+padding.PaddingBottom = UDim.new(0, 4)
+padding.Parent = notification
+
+return notification
+```
+
 end
 
-return Nexora
+– Setup notification interactions
+function NexoraUI:_setupNotificationInteractions(notification, duration)
+local isClosing = false
+
+```
+-- Click to close
+notification.MouseButton1Click:Connect(function()
+    if not isClosing then
+        self:_closeNotification(notification)
+    end
+end)
+
+-- Hover effects
+notification.MouseEnter:Connect(function()
+    if isClosing then return end
+    
+    local icon = notification:FindFirstChild("Icon")
+    local close = notification:FindFirstChild("Close")
+    local timeline = notification:FindFirstChild("Timeline")
+    
+    if icon and close and timeline then
+        -- Hide icon, show close button
+        TweenService:Create(icon, self.theme.animations.hover, {
+            ImageTransparency = 1
+        }):Play()
+        TweenService:Create(icon:FindFirstChild("UIScale"), self.theme.animations.hover, {
+            Scale = 0
+        }):Play()
+        
+        TweenService:Create(close, self.theme.animations.hover, {
+            ImageTransparency = 0
+        }):Play()
+        TweenService:Create(close:FindFirstChild("UIScale"), self.theme.animations.hover, {
+            Scale = 1
+        }):Play()
+        
+        -- Move timeline
+        TweenService:Create(timeline, self.theme.animations.hover, {
+            Position = UDim2.new(0, 0, 1, 2)
+        }):Play()
+    end
+end)
+
+notification.MouseLeave:Connect(function()
+    if isClosing then return end
+    
+    local icon = notification:FindFirstChild("Icon")
+    local close = notification:FindFirstChild("Close")
+    local timeline = notification:FindFirstChild("Timeline")
+    
+    if icon and close and timeline then
+        -- Show icon, hide close button
+        TweenService:Create(icon, self.theme.animations.hover, {
+            ImageTransparency = 0
+        }):Play()
+        TweenService:Create(icon:FindFirstChild("UIScale"), self.theme.animations.hover, {
+            Scale = 1
+        }):Play()
+        
+        TweenService:Create(close, self.theme.animations.hover, {
+            ImageTransparency = 1
+        }):Play()
+        TweenService:Create(close:FindFirstChild("UIScale"), self.theme.animations.hover, {
+            Scale = 0
+        }):Play()
+        
+        -- Reset timeline position
+        TweenService:Create(timeline, self.theme.animations.hover, {
+            Position = UDim2.new(0, 0, 1, 0)
+        }):Play()
+    end
+end)
+
+-- Auto-close after duration
+task.spawn(function()
+    local bar = notification:FindFirstChild("Timeline"):FindFirstChild("Bar")
+    if bar then
+        TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+            Size = UDim2.new(1, 0, 1, 0)
+        }):Play()
+    end
+    
+    task.wait(duration)
+    
+    if not isClosing then
+        self:_closeNotification(notification)
+    end
+end)
+
+-- Store closing state
+notification:SetAttribute("IsClosing", false)
+```
+
+end
+
+– Close notification with animation
+function NexoraUI:_closeNotification(notification)
+if notification:GetAttribute(“IsClosing”) then
+return
+end
+
+```
+notification:SetAttribute("IsClosing", true)
+
+-- Slide out animation
+TweenService:Create(notification, self.theme.animations.notification, {
+    Position = UDim2.new(0.5, 0, -1, 0),
+    Size = UDim2.new(0, 0, 0, 40)
+}):Play()
+
+-- Remove from active notifications
+for i, activeNotif in ipairs(self.activeNotifications) do
+    if activeNotif == notification then
+        table.remove(self.activeNotifications, i)
+        break
+    end
+end
+
+-- Destroy after animation
+task.wait(SLIDE_SPEED)
+notification:Destroy()
+
+-- Reposition remaining notifications
+self:_repositionNotifications()
+```
+
+end
+
+– Reposition notifications
+function NexoraUI:_repositionNotifications()
+for i, notification in ipairs(self.activeNotifications) do
+local targetY = 30 + (i - 1) * 50
+TweenService:Create(notification, self.theme.animations.hover, {
+Position = UDim2.new(0.5, 0, 0, targetY)
+}):Play()
+end
+end
+
+– Show notification
+function NexoraUI:notify(text, options)
+options = options or {}
+
+```
+local duration = options.duration or NOTIFICATION_DURATION
+local icon = options.icon or self.theme.icons.info
+local notificationType = options.type or "info"
+
+-- Create notification
+local notification = self:_createNotificationTemplate()
+notification.Parent = self.notificationContainer
+
+-- Set content
+local description = notification:FindFirstChild("Description")
+local iconLabel = notification:FindFirstChild("Icon")
+
+if description then
+    description.Text = text
+end
+
+if iconLabel then
+    iconLabel.Image = icon
+end
+
+-- Apply type-specific styling
+self:_applyNotificationStyle(notification, notificationType)
+
+-- Calculate text width and resize notification
+local textService = game:GetService("TextService")
+local textSize = textService:GetTextSize(
+    text,
+    15,
+    Enum.Font.GothamMedium,
+    Vector2.new(400, math.huge)
+)
+
+local notificationWidth = math.max(200, math.min(400, textSize.X + 60))
+notification.Size = UDim2.new(0, notificationWidth, 0, 40)
+
+-- Position notification
+local yPosition = 30 + #self.activeNotifications * 50
+notification.Position = UDim2.new(0.5, 0, 0, yPosition)
+
+-- Add to active notifications
+table.insert(self.activeNotifications, notification)
+
+-- Setup interactions
+self:_setupNotificationInteractions(notification, duration)
+
+-- Show with animation
+notification.Visible = true
+TweenService:Create(notification, self.theme.animations.notification, {
+    Size = UDim2.new(0, notificationWidth, 0, 40)
+}):Play()
+
+return notification
+```
+
+end
+
+– Apply notification styling based on type
+function NexoraUI:_applyNotificationStyle(notification, notificationType)
+local colors = {
+info = Color3.fromRGB(52, 152, 219),
+success = Color3.fromRGB(46, 204, 113),
+warning = Color3.fromRGB(241, 196, 15),
+error = Color3.fromRGB(231, 76, 60)
+}
+
+```
+local color = colors[notificationType] or colors.info
+
+local stroke = notification:FindFirstChild("UIStroke")
+if stroke then
+    stroke.Color = color
+end
+
+local timeline = notification:FindFirstChild("Timeline")
+if timeline then
+    local bar = timeline:FindFirstChild("Bar")
+    if bar then
+        bar.BackgroundColor3 = color
+    end
+end
+```
+
+end
+
+– Success notification shorthand
+function NexoraUI:success(text, duration)
+return self:notify(text, {
+type = “success”,
+duration = duration,
+icon = self.theme.icons.success
+})
+end
+
+– Warning notification shorthand
+function NexoraUI:warning(text, duration)
+return self:notify(text, {
+type = “warning”,
+duration = duration,
+icon = self.theme.icons.warning
+})
+end
+
+– Error notification shorthand
+function NexoraUI:error(text, duration)
+return self:notify(text, {
+type = “error”,
+duration = duration,
+icon = self.theme.icons.error
+})
+end
+
+– Info notification shorthand
+function NexoraUI:info(text, duration)
+return self:notify(text, {
+type = “info”,
+duration = duration,
+icon = self.theme.icons.info
+})
+end
+
+– Clear all notifications
+function NexoraUI:clearAll()
+for _, notification in ipairs(self.activeNotifications) do
+self:_closeNotification(notification)
+end
+self.activeNotifications = {}
+end
+
+– Update theme
+function NexoraUI:setTheme(newTheme)
+self.theme = newTheme
+end
+
+– Destroy the UI system
+function NexoraUI:destroy()
+if self.screenGui then
+self.screenGui:Destroy()
+end
+self.activeNotifications = {}
+end
+
+return NexoraUI
