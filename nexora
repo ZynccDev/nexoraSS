@@ -1,452 +1,193 @@
-local TweenService = game:GetService(“TweenService”)
-local UserInputService = game:GetService(“UserInputService”)
-local Players = game:GetService(“Players”)
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
 local GlassUI = {}
 GlassUI.__index = GlassUI
 
 local CONFIG = {
-BACKGROUND_IMAGE = “rbxassetid://16255699706”,
-ANIMATION_SPEED = 0.3,
-BLUR_SIZE = 24,
-CORNER_RADIUS = 12,
-GLASS_TRANSPARENCY = 0.15,
-ACCENT_COLOR = Color3.fromRGB(138, 180, 248),
-PRIMARY_COLOR = Color3.fromRGB(255, 255, 255),
-DARK_COLOR = Color3.fromRGB(17, 24, 39),
-SECONDARY_COLOR = Color3.fromRGB(156, 163, 175)
+	BACKGROUND_IMAGE = "rbxassetid://16255699706",
+	ANIMATION_SPEED = 0.3,
+	BLUR_SIZE = 24,
+	CORNER_RADIUS = 12,
+	GLASS_TRANSPARENCY = 0.15,
+	ACCENT_COLOR = Color3.fromRGB(138, 180, 248),
+	PRIMARY_COLOR = Color3.fromRGB(255, 255, 255),
+	DARK_COLOR = Color3.fromRGB(17, 24, 39),
+	SECONDARY_COLOR = Color3.fromRGB(156, 163, 175),
 }
 
+-- Tween helper
 local function createTween(object, properties, duration)
-local tweenInfo = TweenInfo.new(duration or CONFIG.ANIMATION_SPEED, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-return TweenService:Create(object, tweenInfo, properties)
+	local tweenInfo = TweenInfo.new(duration or CONFIG.ANIMATION_SPEED, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	return TweenService:Create(object, tweenInfo, properties)
 end
 
+-- Corner helper
 local function addCorner(parent, radius)
-local corner = Instance.new(“UICorner”)
-corner.CornerRadius = UDim.new(0, radius or CONFIG.CORNER_RADIUS)
-corner.Parent = parent
-return corner
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or CONFIG.CORNER_RADIUS)
+	corner.Parent = parent
+	return corner
 end
 
 function GlassUI.new()
-local self = setmetatable({}, GlassUI)
-self.screenGui = nil
-self.backgroundBlur = nil
-self.isFullscreen = false
-self:init()
-return self
+	local self = setmetatable({}, GlassUI)
+	self.screenGui = nil
+	self.backgroundBlur = nil
+	self.isFullscreen = false
+	self:init()
+	return self
 end
 
 function GlassUI:init()
-self.screenGui = Instance.new(“ScreenGui”)
-self.screenGui.Name = “GlassUI”
-self.screenGui.ResetOnSpawn = false
-self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	self.screenGui = Instance.new("ScreenGui")
+	self.screenGui.Name = "GlassUI"
+	self.screenGui.ResetOnSpawn = false
+	self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-```
-local success, err = pcall(function()
-    self.screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-end)
+	local success, err = pcall(function()
+		self.screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	end)
 
-if not success then
-    warn("GlassUI: Failed to create ScreenGui - " .. tostring(err))
-    return
-end
+	if not success then
+		warn("GlassUI: Failed to create ScreenGui - " .. tostring(err))
+		return
+	end
 
-self:createBackground()
-self:setupFullscreenDetection()
-```
-
+	self:createBackground()
+	self:setupFullscreenDetection()
 end
 
 function GlassUI:createBackground()
-local background = Instance.new(“ImageLabel”)
-background.Name = “Background”
-background.Size = UDim2.new(1, 0, 1, 0)
-background.Position = UDim2.new(0, 0, 0, 0)
-background.Image = CONFIG.BACKGROUND_IMAGE
-background.ScaleType = Enum.ScaleType.Crop
-background.BackgroundTransparency = 1
-background.ZIndex = 1
-background.Parent = self.screenGui
+	local background = Instance.new("ImageLabel")
+	background.Name = "Background"
+	background.Size = UDim2.new(1, 0, 1, 0)
+	background.Position = UDim2.new(0, 0, 0, 0)
+	background.Image = CONFIG.BACKGROUND_IMAGE
+	background.ScaleType = Enum.ScaleType.Crop
+	background.BackgroundTransparency = 1
+	background.ZIndex = 1
+	background.Parent = self.screenGui
 
-```
-local success, err = pcall(function()
-    local blur = Instance.new("BlurEffect")
-    blur.Name = "GlassUIBlur"
-    blur.Size = 0
-    blur.Parent = game.Lighting
-    self.backgroundBlur = blur
-end)
+	local success, err = pcall(function()
+		local blur = Instance.new("BlurEffect")
+		blur.Name = "GlassUIBlur"
+		blur.Size = 0
+		blur.Parent = game:GetService("Lighting")
+		self.backgroundBlur = blur
+	end)
 
-if not success then
-    warn("GlassUI: Could not create blur effect - " .. tostring(err))
-end
+	if not success then
+		warn("GlassUI: Could not create blur effect - " .. tostring(err))
+	end
 
-self.background = background
-```
-
+	self.background = background
 end
 
 function GlassUI:setupFullscreenDetection()
-local success, err = pcall(function()
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-if gameProcessed then return end
-if input.KeyCode == Enum.KeyCode.F11 then
-self:toggleFullscreen()
-end
-end)
-end)
+	local success, err = pcall(function()
+		UserInputService.InputBegan:Connect(function(input, gameProcessed)
+			if gameProcessed then return end
+			if input.KeyCode == Enum.KeyCode.F11 then
+				self:toggleFullscreen()
+			end
+		end)
+	end)
 
-```
-if not success then
-    warn("GlassUI: Could not setup fullscreen detection - " .. tostring(err))
-end
-```
-
+	if not success then
+		warn("GlassUI: Could not setup fullscreen detection - " .. tostring(err))
+	end
 end
 
 function GlassUI:setFullscreen(isFullscreen)
-if not self.backgroundBlur then return end
+	if not self.backgroundBlur then return end
+	self.isFullscreen = isFullscreen
+	local targetBlur = isFullscreen and CONFIG.BLUR_SIZE or 0
 
-```
-self.isFullscreen = isFullscreen
-local targetBlur = isFullscreen and CONFIG.BLUR_SIZE or 0
+	local success, err = pcall(function()
+		createTween(self.backgroundBlur, {Size = targetBlur}, 0.5):Play()
+	end)
 
-local success, err = pcall(function()
-    createTween(self.backgroundBlur, {Size = targetBlur}, 0.5):Play()
-end)
-
-if not success then
-    warn("GlassUI: Blur animation failed - " .. tostring(err))
-end
-```
-
+	if not success then
+		warn("GlassUI: Blur animation failed - " .. tostring(err))
+	end
 end
 
 function GlassUI:toggleFullscreen()
-self:setFullscreen(not self.isFullscreen)
+	self:setFullscreen(not self.isFullscreen)
 end
 
+-- Shared Create Helper (Panel, Button, Input, Label, Modal...)
 function GlassUI:createPanel(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return nil
-end
+	properties = properties or {}
+	if not self.screenGui then warn("GlassUI: ScreenGui not initialized") return nil end
 
-```
-properties = properties or {}
+	local panel = Instance.new("Frame")
+	panel.Name = properties.Name or "GlassPanel"
+	panel.Size = properties.Size or UDim2.new(0, 400, 0, 300)
+	panel.Position = properties.Position or UDim2.new(0.5, -200, 0.5, -150)
+	panel.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.PRIMARY_COLOR
+	panel.BackgroundTransparency = CONFIG.GLASS_TRANSPARENCY
+	panel.BorderSizePixel = 0
+	panel.ZIndex = properties.ZIndex or 10
+	panel.Parent = properties.Parent or self.screenGui
 
-local panel = Instance.new("Frame")
-panel.Name = properties.Name or "GlassPanel"
-panel.Size = properties.Size or UDim2.new(0, 400, 0, 300)
-panel.Position = properties.Position or UDim2.new(0.5, -200, 0.5, -150)
-panel.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.PRIMARY_COLOR
-panel.BackgroundTransparency = CONFIG.GLASS_TRANSPARENCY
-panel.BorderSizePixel = 0
-panel.ZIndex = properties.ZIndex or 10
-panel.Parent = properties.Parent or self.screenGui
+	addCorner(panel)
 
-addCorner(panel)
+	local border = Instance.new("UIStroke")
+	border.Color = CONFIG.ACCENT_COLOR
+	border.Thickness = 1
+	border.Transparency = 0.7
+	border.Parent = panel
 
-local border = Instance.new("UIStroke")
-border.Color = CONFIG.ACCENT_COLOR
-border.Thickness = 1
-border.Transparency = 0.7
-border.Parent = panel
-
-return panel
-```
-
+	return panel
 end
 
 function GlassUI:createButton(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return nil
+	properties = properties or {}
+	if not self.screenGui then warn("GlassUI: ScreenGui not initialized") return nil end
+
+	local button = Instance.new("TextButton")
+	button.Name = properties.Name or "GlassButton"
+	button.Size = properties.Size or UDim2.new(0, 120, 0, 40)
+	button.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+	button.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.ACCENT_COLOR
+	button.BackgroundTransparency = 0.2
+	button.BorderSizePixel = 0
+	button.Text = properties.Text or "Button"
+	button.TextColor3 = properties.TextColor3 or CONFIG.PRIMARY_COLOR
+	button.TextSize = properties.TextSize or 14
+	button.Font = properties.Font or Enum.Font.GothamMedium
+	button.ZIndex = properties.ZIndex or 11
+	button.Parent = properties.Parent or self.screenGui
+
+	addCorner(button, 8)
+
+	local originalSize = button.Size
+	local originalTransparency = button.BackgroundTransparency
+
+	button.MouseEnter:Connect(function()
+		createTween(button, {
+			BackgroundTransparency = math.clamp(originalTransparency - 0.1, 0, 1),
+			Size = originalSize + UDim2.new(0, 4, 0, 2)
+		}, 0.2):Play()
+	end)
+
+	button.MouseLeave:Connect(function()
+		createTween(button, {
+			BackgroundTransparency = originalTransparency,
+			Size = originalSize
+		}, 0.2):Play()
+	end)
+
+	button.MouseButton1Down:Connect(function()
+		createTween(button, {Size = originalSize - UDim2.new(0, 2, 0, 1)}, 0.1):Play()
+	end)
+
+	button.MouseButton1Up:Connect(function()
+		createTween(button, {Size = originalSize}, 0.1):Play()
+	end)
+
+	return button
 end
-
-```
-properties = properties or {}
-
-local button = Instance.new("TextButton")
-button.Name = properties.Name or "GlassButton"
-button.Size = properties.Size or UDim2.new(0, 120, 0, 40)
-button.Position = properties.Position or UDim2.new(0, 0, 0, 0)
-button.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.ACCENT_COLOR
-button.BackgroundTransparency = 0.2
-button.BorderSizePixel = 0
-button.Text = properties.Text or "Button"
-button.TextColor3 = properties.TextColor3 or CONFIG.PRIMARY_COLOR
-button.TextSize = properties.TextSize or 14
-button.Font = properties.Font or Enum.Font.GothamMedium
-button.ZIndex = properties.ZIndex or 11
-button.Parent = properties.Parent or self.screenGui
-
-addCorner(button, 8)
-
-local originalSize = button.Size
-local originalTransparency = button.BackgroundTransparency
-
-button.MouseEnter:Connect(function()
-    createTween(button, {
-        BackgroundTransparency = originalTransparency - 0.1,
-        Size = originalSize + UDim2.new(0, 4, 0, 2)
-    }, 0.2):Play()
-end)
-
-button.MouseLeave:Connect(function()
-    createTween(button, {
-        BackgroundTransparency = originalTransparency,
-        Size = originalSize
-    }, 0.2):Play()
-end)
-
-button.MouseButton1Down:Connect(function()
-    createTween(button, {Size = originalSize - UDim2.new(0, 2, 0, 1)}, 0.1):Play()
-end)
-
-button.MouseButton1Up:Connect(function()
-    createTween(button, {Size = originalSize}, 0.1):Play()
-end)
-
-return button
-```
-
-end
-
-function GlassUI:createInput(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return nil
-end
-
-```
-properties = properties or {}
-
-local inputFrame = Instance.new("Frame")
-inputFrame.Name = properties.Name or "GlassInput"
-inputFrame.Size = properties.Size or UDim2.new(0, 200, 0, 35)
-inputFrame.Position = properties.Position or UDim2.new(0, 0, 0, 0)
-inputFrame.BackgroundColor3 = CONFIG.PRIMARY_COLOR
-inputFrame.BackgroundTransparency = 0.1
-inputFrame.BorderSizePixel = 0
-inputFrame.ZIndex = properties.ZIndex or 11
-inputFrame.Parent = properties.Parent or self.screenGui
-
-addCorner(inputFrame, 6)
-
-local input = Instance.new("TextBox")
-input.Name = "Input"
-input.Size = UDim2.new(1, -16, 1, 0)
-input.Position = UDim2.new(0, 8, 0, 0)
-input.BackgroundTransparency = 1
-input.Text = ""
-input.PlaceholderText = properties.PlaceholderText or "Enter text..."
-input.TextColor3 = CONFIG.DARK_COLOR
-input.PlaceholderColor3 = CONFIG.SECONDARY_COLOR
-input.TextSize = properties.TextSize or 14
-input.Font = properties.Font or Enum.Font.Gotham
-input.TextXAlignment = Enum.TextXAlignment.Left
-input.ZIndex = 12
-input.Parent = inputFrame
-
-local border = Instance.new("UIStroke")
-border.Color = CONFIG.SECONDARY_COLOR
-border.Thickness = 1
-border.Transparency = 0.5
-border.Parent = inputFrame
-
-input.Focused:Connect(function()
-    createTween(border, {
-        Color = CONFIG.ACCENT_COLOR,
-        Transparency = 0
-    }, 0.2):Play()
-end)
-
-input.FocusLost:Connect(function()
-    createTween(border, {
-        Color = CONFIG.SECONDARY_COLOR,
-        Transparency = 0.5
-    }, 0.2):Play()
-end)
-
-return inputFrame, input
-```
-
-end
-
-function GlassUI:createLabel(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return nil
-end
-
-```
-properties = properties or {}
-
-local label = Instance.new("TextLabel")
-label.Name = properties.Name or "GlassLabel"
-label.Size = properties.Size or UDim2.new(0, 200, 0, 30)
-label.Position = properties.Position or UDim2.new(0, 0, 0, 0)
-label.BackgroundTransparency = 1
-label.Text = properties.Text or "Label"
-label.TextColor3 = properties.TextColor3 or CONFIG.DARK_COLOR
-label.TextSize = properties.TextSize or 16
-label.Font = properties.Font or Enum.Font.GothamMedium
-label.TextXAlignment = properties.TextXAlignment or Enum.TextXAlignment.Left
-label.ZIndex = properties.ZIndex or 11
-label.Parent = properties.Parent or self.screenGui
-
-return label
-```
-
-end
-
-function GlassUI:createModal(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return nil
-end
-
-```
-properties = properties or {}
-
-local overlay = Instance.new("Frame")
-overlay.Name = "ModalOverlay"
-overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.Position = UDim2.new(0, 0, 0, 0)
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlay.BackgroundTransparency = 1
-overlay.ZIndex = 50
-overlay.Parent = self.screenGui
-
-local modal = self:createPanel({
-    Name = properties.Name or "Modal",
-    Size = properties.Size or UDim2.new(0, 500, 0, 400),
-    Position = UDim2.new(0.5, -250, 0.5, -200),
-    Parent = overlay,
-    ZIndex = 51
-})
-
-if not modal then
-    overlay:Destroy()
-    return nil
-end
-
-overlay.BackgroundTransparency = 1
-modal.Size = UDim2.new(0, 0, 0, 0)
-modal.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-createTween(overlay, {BackgroundTransparency = 0.4}, 0.3):Play()
-createTween(modal, {
-    Size = properties.Size or UDim2.new(0, 500, 0, 400),
-    Position = UDim2.new(0.5, -250, 0.5, -200)
-}, 0.4):Play()
-
-local function closeModal()
-    createTween(overlay, {BackgroundTransparency = 1}, 0.2):Play()
-    createTween(modal, {
-        Size = UDim2.new(0, 0, 0, 0),
-        Position = UDim2.new(0.5, 0, 0.5, 0)
-    }, 0.3):Play()
-    
-    spawn(function()
-        wait(0.3)
-        if overlay and overlay.Parent then
-            overlay:Destroy()
-        end
-    end)
-end
-
-local clickDetector = Instance.new("TextButton")
-clickDetector.Size = UDim2.new(1, 0, 1, 0)
-clickDetector.Position = UDim2.new(0, 0, 0, 0)
-clickDetector.BackgroundTransparency = 1
-clickDetector.Text = ""
-clickDetector.ZIndex = 50
-clickDetector.Parent = overlay
-
-clickDetector.MouseButton1Click:Connect(function()
-    closeModal()
-end)
-
-return modal, closeModal
-```
-
-end
-
-function GlassUI:showNotification(properties)
-if not self.screenGui then
-warn(“GlassUI: ScreenGui not initialized”)
-return
-end
-
-```
-properties = properties or {}
-
-spawn(function()
-    local notification = Instance.new("Frame")
-    notification.Name = "Notification"
-    notification.Size = UDim2.new(0, 300, 0, 60)
-    notification.Position = UDim2.new(1, 0, 0, 20)
-    notification.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.PRIMARY_COLOR
-    notification.BackgroundTransparency = 0.1
-    notification.BorderSizePixel = 0
-    notification.ZIndex = 100
-    notification.Parent = self.screenGui
-    
-    addCorner(notification)
-    
-    local accent = Instance.new("Frame")
-    accent.Name = "Accent"
-    accent.Size = UDim2.new(0, 4, 1, 0)
-    accent.Position = UDim2.new(0, 0, 0, 0)
-    accent.BackgroundColor3 = properties.AccentColor or CONFIG.ACCENT_COLOR
-    accent.BorderSizePixel = 0
-    accent.ZIndex = 101
-    accent.Parent = notification
-    
-    addCorner(accent, 2)
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "Text"
-    label.Size = UDim2.new(1, -20, 1, 0)
-    label.Position = UDim2.new(0, 16, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = properties.Text or "Notification"
-    label.TextColor3 = CONFIG.DARK_COLOR
-    label.TextSize = 14
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextWrapped = true
-    label.ZIndex = 102
-    label.Parent = notification
-    
-    createTween(notification, {Position = UDim2.new(1, -320, 0, 20)}, 0.4):Play()
-    
-    local duration = properties.Duration or 3
-    wait(duration)
-    
-    createTween(notification, {Position = UDim2.new(1, 0, 0, 20)}, 0.3):Play()
-    wait(0.3)
-    
-    if notification and notification.Parent then
-        notification:Destroy()
-    end
-end)
-```
-
-end
-
-function GlassUI:destroy()
-if self.backgroundBlur and self.backgroundBlur.Parent then
-self.backgroundBlur:Destroy()
-end
-if self.screenGui and self.screenGui.Parent then
-self.screenGui:Destroy()
-end
-end
-
-return GlassUI
