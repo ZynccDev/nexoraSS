@@ -1,244 +1,469 @@
--- Nexora UI (Exploit Ready + Fade + Popup + Command Open)
--- Host it at: https://raw.githubusercontent.com/ZynccDev/nexoraSS/main/nexora
+local TweenService = game:GetService(“TweenService”)
+local UserInputService = game:GetService(“UserInputService”)
+local RunService = game:GetService(“RunService”)
+local Players = game:GetService(“Players”)
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+local GlassUI = {}
+GlassUI.__index = GlassUI
 
-local Nexora = {}
-Nexora.__index = Nexora
-
-local Themes = {
-	Dark = {
-		Background = Color3.fromRGB(20, 20, 20),
-		Text = Color3.fromRGB(255, 255, 255),
-		Accent = Color3.fromRGB(100, 100, 255),
-		Tab = Color3.fromRGB(30, 30, 35),
-		Button = Color3.fromRGB(40, 40, 50)
-	}
+– Configuration
+local CONFIG = {
+BACKGROUND_IMAGE = “rbxassetid://16255699706”,
+ANIMATION_SPEED = 0.3,
+BLUR_SIZE = 24,
+CORNER_RADIUS = 12,
+GLASS_TRANSPARENCY = 0.15,
+SHADOW_TRANSPARENCY = 0.3,
+ACCENT_COLOR = Color3.fromRGB(138, 180, 248),
+PRIMARY_COLOR = Color3.fromRGB(255, 255, 255),
+SECONDARY_COLOR = Color3.fromRGB(156, 163, 175),
+DARK_COLOR = Color3.fromRGB(17, 24, 39),
+SUCCESS_COLOR = Color3.fromRGB(34, 197, 94),
+WARNING_COLOR = Color3.fromRGB(251, 191, 36),
+ERROR_COLOR = Color3.fromRGB(239, 68, 68)
 }
 
-local function roundify(inst, rad)
-	local uic = Instance.new("UICorner")
-	uic.CornerRadius = UDim.new(0, rad or 8)
-	uic.Parent = inst
+– Utility Functions
+local function createTween(object, properties, duration, easingStyle, easingDirection)
+local tweenInfo = TweenInfo.new(
+duration or CONFIG.ANIMATION_SPEED,
+easingStyle or Enum.EasingStyle.Quart,
+easingDirection or Enum.EasingDirection.Out
+)
+return TweenService:Create(object, tweenInfo, properties)
 end
 
-local function fade(inst, props, time)
-	TweenService:Create(inst, TweenInfo.new(time or 0.5), props):Play()
+local function addCorner(parent, radius)
+local corner = Instance.new(“UICorner”)
+corner.CornerRadius = UDim.new(0, radius or CONFIG.CORNER_RADIUS)
+corner.Parent = parent
+return corner
 end
 
--- ✅ Popup system
-function Nexora:Popup(title, content)
-	local popup = Instance.new("Frame", game.CoreGui)
-	popup.AnchorPoint = Vector2.new(0.5, 0.5)
-	popup.Position = UDim2.new(0.5, 0, 0.5, 0)
-	popup.Size = UDim2.new(0, 300, 0, 150)
-	popup.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	popup.ZIndex = 999
-	roundify(popup, 12)
-
-	local titleLbl = Instance.new("TextLabel", popup)
-	titleLbl.Size = UDim2.new(1, 0, 0, 40)
-	titleLbl.Text = title
-	titleLbl.Font = Enum.Font.GothamBold
-	titleLbl.TextSize = 18
-	titleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleLbl.BackgroundTransparency = 1
-
-	local contentLbl = Instance.new("TextLabel", popup)
-	contentLbl.Position = UDim2.new(0, 10, 0, 50)
-	contentLbl.Size = UDim2.new(1, -20, 1, -60)
-	contentLbl.TextWrapped = true
-	contentLbl.Text = content
-	contentLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-	contentLbl.TextSize = 14
-	contentLbl.Font = Enum.Font.Gotham
-	contentLbl.BackgroundTransparency = 1
-
-	wait(3)
-	fade(popup, {BackgroundTransparency = 1}, 0.3)
-	fade(titleLbl, {TextTransparency = 1}, 0.3)
-	fade(contentLbl, {TextTransparency = 1}, 0.3)
-	wait(0.3)
-	popup:Destroy()
+local function addGradient(parent, colors, rotation)
+local gradient = Instance.new(“UIGradient”)
+gradient.Color = ColorSequence.new(colors)
+gradient.Rotation = rotation or 0
+gradient.Parent = parent
+return gradient
 end
 
--- ✅ UI Window
-function Nexora:CreateWindow(title, opts)
-	opts = opts or {}
-	local theme = Themes[opts.Theme or "Dark"]
-
-	local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-	gui.Name = "NexoraUI"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-
-	local welcome = Instance.new("Frame", gui)
-	welcome.Size = UDim2.new(1, 0, 1, 0)
-	welcome.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-	welcome.BackgroundTransparency = 1
-	welcome.ZIndex = 10
-
-	local welcomeText = Instance.new("TextLabel", welcome)
-	welcomeText.AnchorPoint = Vector2.new(0.5, 0.5)
-	welcomeText.Position = UDim2.new(0.5, 0, 0.5, 0)
-	welcomeText.Size = UDim2.new(0, 400, 0, 100)
-	welcomeText.Text = "Welcome, " .. LocalPlayer.Name
-	welcomeText.TextSize = 28
-	welcomeText.Font = Enum.Font.GothamSemibold
-	welcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	welcomeText.BackgroundTransparency = 1
-	welcomeText.TextTransparency = 1
-
-	fade(welcome, {BackgroundTransparency = 0}, 0.5)
-	fade(welcomeText, {TextTransparency = 0}, 0.5)
-	wait(2)
-	fade(welcomeText, {TextTransparency = 1}, 0.5)
-	wait(0.4)
-	fade(welcome, {BackgroundTransparency = 1}, 0.5)
-	wait(0.4)
-	welcome:Destroy()
-
-	local main = Instance.new("ImageLabel")
-	main.Name = "frame"
-	main.Parent = gui
-
-	main.Image = "rbxassetid://16255699706"
-	main.ImageColor3 = Color3.fromRGB(255, 255, 255)
-	main.ImageTransparency = 0.8
-	main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-	main.BackgroundTransparency = 0.1
-	main.BorderSizePixel = 0
-	main.ClipsDescendants = false
-	main.Selectable = true
-	main.Visible = true
-	main.ZIndex = 1
-	main.LayoutOrder = 0
-	main.Size = UDim2.new(1, 0, 1, 0)
-	main.Position = UDim2.new(0.5, 0, 0.5, 0)
-	main.AnchorPoint = Vector2.new(0.5, 0.5)
-	main.AutomaticSize = Enum.AutomaticSize.None
-	main.SizeConstraint = Enum.SizeConstraint.RelativeXY
-	main.Rotation = 0
-
-	-- Shadow
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "shadow"
-	shadow.Parent = main
-	shadow.Image = "rbxassetid://16286730454"
-	shadow.ImageTransparency = 0
-	shadow.BackgroundTransparency = 1
-	shadow.BorderSizePixel = 0
-	shadow.Visible = false
-	shadow.ZIndex = -10
-	shadow.Size = UDim2.new(1, 88, 1, 88)
-	shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-
-	-- Corner + Scale
-	Instance.new("UICorner", main).Name = "corner"
-	Instance.new("UIScale", main).Name = "scale"
-
-	local tabsHolder = Instance.new("Frame", main)
-	tabsHolder.Size = UDim2.new(1, 0, 0, 50)
-	tabsHolder.BackgroundColor3 = theme.Tab
-	roundify(tabsHolder, 12)
-
-	local tabLayout = Instance.new("UIListLayout", tabsHolder)
-	tabLayout.FillDirection = Enum.FillDirection.Horizontal
-	tabLayout.Padding = UDim.new(0, 4)
-
-	local content = Instance.new("Frame", main)
-	content.Position = UDim2.new(0, 0, 0, 50)
-	content.Size = UDim2.new(1, 0, 1, -50)
-	content.BackgroundTransparency = 1
-
-	local tabs = {}
-
-	local function switchTab(tabName)
-		for name, tab in pairs(tabs) do
-			tab.Page.Visible = (name == tabName)
-			TweenService:Create(tab.Button, TweenInfo.new(0.2), {
-				BackgroundColor3 = name == tabName and theme.Accent or theme.Tab
-			}):Play()
-		end
-	end
-
-	local win = {}
-
-	function win:AddTab(name)
-		local button = Instance.new("TextButton", tabsHolder)
-		button.Size = UDim2.new(0, 100, 1, 0)
-		button.Text = name
-		button.BackgroundColor3 = theme.Tab
-		button.TextColor3 = theme.Text
-		button.Font = Enum.Font.Gotham
-		button.TextSize = 14
-		button.BorderSizePixel = 0
-		button.AutoButtonColor = false
-		roundify(button, 8)
-
-		local page = Instance.new("ScrollingFrame", content)
-		page.Size = UDim2.new(1, 0, 1, 0)
-		page.BackgroundTransparency = 1
-		page.Visible = false
-		page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		page.CanvasSize = UDim2.new(0, 0, 0, 0)
-		page.ScrollBarThickness = 4
-
-		local layout = Instance.new("UIListLayout", page)
-		layout.Padding = UDim.new(0, 10)
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-		tabs[name] = { Button = button, Page = page }
-
-		button.MouseButton1Click:Connect(function()
-			switchTab(name)
-		end)
-
-		if not next(tabs, next(tabs)) then
-			switchTab(name)
-		end
-
-		local tab = {}
-
-		function tab:AddButton(cfg)
-			local btn = Instance.new("TextButton", page)
-			btn.Size = UDim2.new(1, -20, 0, 40)
-			btn.Text = cfg.Name or "Button"
-			btn.BackgroundColor3 = theme.Button
-			btn.TextColor3 = Color3.new(1, 1, 1)
-			btn.Font = Enum.Font.GothamMedium
-			btn.TextSize = 15
-			btn.BorderSizePixel = 0
-			roundify(btn, 10)
-			btn.MouseButton1Click:Connect(function()
-				if cfg.Callback then
-					cfg.Callback()
-				end
-			end)
-		end
-
-		return tab
-	end
-
-	return win
+local function addShadow(parent)
+local shadow = Instance.new(“ImageLabel”)
+shadow.Name = “Shadow”
+shadow.Size = UDim2.new(1, 20, 1, 20)
+shadow.Position = UDim2.new(0, -10, 0, -10)
+shadow.BackgroundTransparency = 1
+shadow.Image = “rbxasset://textures/ui/GuiImagePlaceholder.png”
+shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+shadow.ImageTransparency = CONFIG.SHADOW_TRANSPARENCY
+shadow.ZIndex = parent.ZIndex - 1
+shadow.Parent = parent.Parent
+addCorner(shadow, CONFIG.CORNER_RADIUS + 2)
+return shadow
 end
 
--- ✅ Chat command: /nexora
-Players.LocalPlayer.Chatted:Connect(function(msg)
-	if msg:lower() == "/nexora" then
-		local UI = Nexora
-		local win = UI:CreateWindow("Nexora")
-		local tab = win:AddTab("Main")
-		tab:AddButton({
-			Name = "Show Popup",
-			Callback = function()
-				UI:Popup("Nexora", "You loaded the UI successfully.")
-			end
-		})
-	end
+– Main GlassUI Class
+function GlassUI.new()
+local self = setmetatable({}, GlassUI)
+self.screenGui = nil
+self.components = {}
+self.isFullscreen = false
+self:init()
+return self
+end
+
+function GlassUI:init()
+– Create main ScreenGui
+self.screenGui = Instance.new(“ScreenGui”)
+self.screenGui.Name = “GlassUI”
+self.screenGui.ResetOnSpawn = false
+self.screenGui.Parent = Players.LocalPlayer:WaitForChild(“PlayerGui”)
+
+```
+-- Create background
+self:createBackground()
+
+-- Setup fullscreen detection
+self:setupFullscreenDetection()
+```
+
+end
+
+function GlassUI:createBackground()
+local background = Instance.new(“ImageLabel”)
+background.Name = “Background”
+background.Size = UDim2.new(1, 0, 1, 0)
+background.Position = UDim2.new(0, 0, 0, 0)
+background.Image = CONFIG.BACKGROUND_IMAGE
+background.ScaleType = Enum.ScaleType.Crop
+background.BackgroundTransparency = 1
+background.Parent = self.screenGui
+
+```
+-- Add blur effect (initially disabled)
+local blur = Instance.new("BlurEffect")
+blur.Name = "BackgroundBlur"
+blur.Size = 0
+blur.Parent = game.Lighting
+
+self.backgroundBlur = blur
+self.background = background
+```
+
+end
+
+function GlassUI:setupFullscreenDetection()
+UserInputService.WindowFocused:Connect(function()
+if UserInputService:IsKeyDown(Enum.KeyCode.F11) or
+game.Workspace.CurrentCamera.ViewportSize.Y >= 1000 then
+self:setFullscreen(true)
+end
 end)
 
-return Nexora
+```
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F11 then
+        self:toggleFullscreen()
+    end
+end)
+```
+
+end
+
+function GlassUI:setFullscreen(isFullscreen)
+self.isFullscreen = isFullscreen
+local targetBlur = isFullscreen and CONFIG.BLUR_SIZE or 0
+
+```
+createTween(self.backgroundBlur, {Size = targetBlur}, 0.5):Play()
+```
+
+end
+
+function GlassUI:toggleFullscreen()
+self:setFullscreen(not self.isFullscreen)
+end
+
+– Glass Panel Component
+function GlassUI:createPanel(properties)
+properties = properties or {}
+
+```
+local panel = Instance.new("Frame")
+panel.Name = properties.Name or "GlassPanel"
+panel.Size = properties.Size or UDim2.new(0, 400, 0, 300)
+panel.Position = properties.Position or UDim2.new(0.5, -200, 0.5, -150)
+panel.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.PRIMARY_COLOR
+panel.BackgroundTransparency = CONFIG.GLASS_TRANSPARENCY
+panel.BorderSizePixel = 0
+panel.ZIndex = properties.ZIndex or 2
+panel.Parent = properties.Parent or self.screenGui
+
+-- Add glass effect
+addCorner(panel)
+local shadow = addShadow(panel)
+
+-- Add subtle gradient for depth
+addGradient(panel, {
+    Color3.fromRGB(255, 255, 255),
+    Color3.fromRGB(245, 245, 245)
+}, 45)
+
+-- Add border glow
+local border = Instance.new("UIStroke")
+border.Color = CONFIG.ACCENT_COLOR
+border.Thickness = 1
+border.Transparency = 0.7
+border.Parent = panel
+
+table.insert(self.components, {type = "panel", element = panel, shadow = shadow})
+return panel
+```
+
+end
+
+– Button Component
+function GlassUI:createButton(properties)
+properties = properties or {}
+
+```
+local button = Instance.new("TextButton")
+button.Name = properties.Name or "GlassButton"
+button.Size = properties.Size or UDim2.new(0, 120, 0, 40)
+button.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+button.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.ACCENT_COLOR
+button.BackgroundTransparency = 0.2
+button.BorderSizePixel = 0
+button.Text = properties.Text or "Button"
+button.TextColor3 = properties.TextColor3 or CONFIG.PRIMARY_COLOR
+button.TextSize = properties.TextSize or 14
+button.Font = properties.Font or Enum.Font.GothamMedium
+button.ZIndex = properties.ZIndex or 3
+button.Parent = properties.Parent or self.screenGui
+
+addCorner(button, 8)
+
+-- Add hover effects
+local originalTransparency = button.BackgroundTransparency
+local hoverTween, leaveTween
+
+button.MouseEnter:Connect(function()
+    if hoverTween then hoverTween:Cancel() end
+    hoverTween = createTween(button, {
+        BackgroundTransparency = originalTransparency - 0.1,
+        Size = button.Size + UDim2.new(0, 4, 0, 2)
+    }, 0.2)
+    hoverTween:Play()
+end)
+
+button.MouseLeave:Connect(function()
+    if leaveTween then leaveTween:Cancel() end
+    leaveTween = createTween(button, {
+        BackgroundTransparency = originalTransparency,
+        Size = properties.Size or UDim2.new(0, 120, 0, 40)
+    }, 0.2)
+    leaveTween:Play()
+end)
+
+-- Click animation
+button.MouseButton1Down:Connect(function()
+    createTween(button, {Size = button.Size - UDim2.new(0, 2, 0, 1)}, 0.1):Play()
+end)
+
+button.MouseButton1Up:Connect(function()
+    createTween(button, {Size = properties.Size or UDim2.new(0, 120, 0, 40)}, 0.1):Play()
+end)
+
+table.insert(self.components, {type = "button", element = button})
+return button
+```
+
+end
+
+– Input Field Component
+function GlassUI:createInput(properties)
+properties = properties or {}
+
+```
+local inputFrame = Instance.new("Frame")
+inputFrame.Name = properties.Name or "GlassInput"
+inputFrame.Size = properties.Size or UDim2.new(0, 200, 0, 35)
+inputFrame.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+inputFrame.BackgroundColor3 = CONFIG.PRIMARY_COLOR
+inputFrame.BackgroundTransparency = 0.1
+inputFrame.BorderSizePixel = 0
+inputFrame.ZIndex = properties.ZIndex or 3
+inputFrame.Parent = properties.Parent or self.screenGui
+
+addCorner(inputFrame, 6)
+
+local input = Instance.new("TextBox")
+input.Name = "Input"
+input.Size = UDim2.new(1, -16, 1, 0)
+input.Position = UDim2.new(0, 8, 0, 0)
+input.BackgroundTransparency = 1
+input.Text = ""
+input.PlaceholderText = properties.PlaceholderText or "Enter text..."
+input.TextColor3 = CONFIG.DARK_COLOR
+input.PlaceholderColor3 = CONFIG.SECONDARY_COLOR
+input.TextSize = properties.TextSize or 14
+input.Font = properties.Font or Enum.Font.Gotham
+input.TextXAlignment = Enum.TextXAlignment.Left
+input.ZIndex = 4
+input.Parent = inputFrame
+
+-- Add focus effects
+local border = Instance.new("UIStroke")
+border.Color = CONFIG.SECONDARY_COLOR
+border.Thickness = 1
+border.Transparency = 0.5
+border.Parent = inputFrame
+
+input.Focused:Connect(function()
+    createTween(border, {
+        Color = CONFIG.ACCENT_COLOR,
+        Transparency = 0
+    }, 0.2):Play()
+end)
+
+input.FocusLost:Connect(function()
+    createTween(border, {
+        Color = CONFIG.SECONDARY_COLOR,
+        Transparency = 0.5
+    }, 0.2):Play()
+end)
+
+table.insert(self.components, {type = "input", element = inputFrame, textbox = input})
+return inputFrame, input
+```
+
+end
+
+– Label Component
+function GlassUI:createLabel(properties)
+properties = properties or {}
+
+```
+local label = Instance.new("TextLabel")
+label.Name = properties.Name or "GlassLabel"
+label.Size = properties.Size or UDim2.new(0, 200, 0, 30)
+label.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = properties.Text or "Label"
+label.TextColor3 = properties.TextColor3 or CONFIG.DARK_COLOR
+label.TextSize = properties.TextSize or 16
+label.Font = properties.Font or Enum.Font.GothamMedium
+label.TextXAlignment = properties.TextXAlignment or Enum.TextXAlignment.Left
+label.ZIndex = properties.ZIndex or 3
+label.Parent = properties.Parent or self.screenGui
+
+table.insert(self.components, {type = "label", element = label})
+return label
+```
+
+end
+
+– Modal Component
+function GlassUI:createModal(properties)
+properties = properties or {}
+
+```
+-- Create overlay
+local overlay = Instance.new("Frame")
+overlay.Name = "ModalOverlay"
+overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.Position = UDim2.new(0, 0, 0, 0)
+overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+overlay.BackgroundTransparency = 1
+overlay.ZIndex = 10
+overlay.Parent = self.screenGui
+
+-- Create modal panel
+local modal = self:createPanel({
+    Name = properties.Name or "Modal",
+    Size = properties.Size or UDim2.new(0, 500, 0, 400),
+    Position = UDim2.new(0.5, -250, 0.5, -200),
+    Parent = overlay,
+    ZIndex = 11
+})
+
+-- Animate in
+overlay.BackgroundTransparency = 1
+modal.Size = UDim2.new(0, 0, 0, 0)
+modal.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+createTween(overlay, {BackgroundTransparency = 0.4}, 0.3):Play()
+createTween(modal, {
+    Size = properties.Size or UDim2.new(0, 500, 0, 400),
+    Position = UDim2.new(0.5, -250, 0.5, -200)
+}, 0.4, Enum.EasingStyle.Back):Play()
+
+-- Close function
+local function closeModal()
+    createTween(overlay, {BackgroundTransparency = 1}, 0.2):Play()
+    createTween(modal, {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }, 0.3):Play()
+    
+    wait(0.3)
+    overlay:Destroy()
+end
+
+-- Click outside to close
+overlay.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        closeModal()
+    end
+end)
+
+table.insert(self.components, {type = "modal", element = overlay, panel = modal, close = closeModal})
+return modal, closeModal
+```
+
+end
+
+– Notification System
+function GlassUI:showNotification(properties)
+properties = properties or {}
+
+```
+local notification = Instance.new("Frame")
+notification.Name = "Notification"
+notification.Size = UDim2.new(0, 300, 0, 60)
+notification.Position = UDim2.new(1, -320, 0, 20)
+notification.BackgroundColor3 = properties.BackgroundColor3 or CONFIG.PRIMARY_COLOR
+notification.BackgroundTransparency = 0.1
+notification.BorderSizePixel = 0
+notification.ZIndex = 20
+notification.Parent = self.screenGui
+
+addCorner(notification)
+addShadow(notification)
+
+-- Add colored accent bar
+local accent = Instance.new("Frame")
+accent.Name = "Accent"
+accent.Size = UDim2.new(0, 4, 1, 0)
+accent.Position = UDim2.new(0, 0, 0, 0)
+accent.BackgroundColor3 = properties.AccentColor or CONFIG.ACCENT_COLOR
+accent.BorderSizePixel = 0
+accent.ZIndex = 21
+accent.Parent = notification
+
+addCorner(accent, 2)
+
+-- Add text
+local label = Instance.new("TextLabel")
+label.Name = "Text"
+label.Size = UDim2.new(1, -20, 1, 0)
+label.Position = UDim2.new(0, 16, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = properties.Text or "Notification"
+label.TextColor3 = CONFIG.DARK_COLOR
+label.TextSize = 14
+label.Font = Enum.Font.Gotham
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextWrapped = true
+label.ZIndex = 22
+label.Parent = notification
+
+-- Animate in
+notification.Position = UDim2.new(1, 0, 0, 20)
+createTween(notification, {Position = UDim2.new(1, -320, 0, 20)}, 0.4):Play()
+
+-- Auto dismiss after duration
+local duration = properties.Duration or 3
+wait(duration)
+
+createTween(notification, {Position = UDim2.new(1, 0, 0, 20)}, 0.3):Play()
+wait(0.3)
+notification:Destroy()
+```
+
+end
+
+– Utility Methods
+function GlassUI:setTheme(theme)
+if theme == “dark” then
+CONFIG.PRIMARY_COLOR = Color3.fromRGB(31, 41, 55)
+CONFIG.SECONDARY_COLOR = Color3.fromRGB(75, 85, 99)
+CONFIG.DARK_COLOR = Color3.fromRGB(243, 244, 246)
+elseif theme == “light” then
+CONFIG.PRIMARY_COLOR = Color3.fromRGB(255, 255, 255)
+CONFIG.SECONDARY_COLOR = Color3.fromRGB(156, 163, 175)
+CONFIG.DARK_COLOR = Color3.fromRGB(17, 24, 39)
+end
+end
+
+function GlassUI:destroy()
+if self.backgroundBlur then
+self.backgroundBlur:Destroy()
+end
+if self.screenGui then
+self.screenGui:Destroy()
+end
+end
+
+return GlassUI
